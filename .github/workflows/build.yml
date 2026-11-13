@@ -1,24 +1,36 @@
-name: Build APK
+name: Build Lumen Launcher
 on:
   push:
-    branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack project
-        run: unzip -o project.zip -d .
+      - name: Unzip project
+        run: unzip -o lumen-launcher.zip
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
-      - run: gradle assembleDebug --no-daemon
+          gradle-version: 8.7
+      - name: Build APK
+        working-directory: LumenLauncher
+        run: gradle assembleDebug --no-daemon
+      - name: Rename
+        run: cp LumenLauncher/app/build/outputs/apk/debug/app-debug.apk Lumen-Launcher.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Lumen-Launcher
-          path: app/build/outputs/apk/debug/*.apk
+          name: Lumen-Launcher-APK
+          path: Lumen-Launcher.apk
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Lumen Launcher build ${{ github.run_number }}
+          files: Lumen-Launcher.apk
